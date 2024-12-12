@@ -1,0 +1,39 @@
+version: "3.8"
+
+services:
+  storage_proxy:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=mysql://root:root@database:3306/cloud_project  # Updated to match MySQL connection
+      - KAFKA_BOOTSTRAP_SERVERS=${KAFKA_BOOTSTRAP_SERVERS}
+    depends_on:
+      - database
+    networks:
+      - app_network
+    restart: unless-stopped
+
+  database:
+    image: mysql:8.0
+    container_name: mysql_database
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: root  # Set the root password here
+      MYSQL_DATABASE: cloud_project  # The database name to create
+    volumes:
+      - db_data:/var/lib/mysql  # Persistent storage for MySQL
+      - ./init_schema.sql:/docker-entrypoint-initdb.d/init_schema.sql  # Mount SQL file to initialize the DB
+    networks:
+      - app_network
+    restart: unless-stopped
+
+volumes:
+  db_data:  # Persistent storage for MySQL
+
+networks:
+  app_network:
+    driver: bridge
